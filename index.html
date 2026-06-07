@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="bn" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CricScore Pro - Elite Cricket Scorer</title>
+    <!-- Tailwind CSS Engine -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- HTML2PDF & HTML2Canvas for Advanced Exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cricket: {
+                            50: '#f0fdf4', 100: '#dcfce7', 400: '#4ade80',
+                            500: '#22c55e', 600: '#16a34a', 700: '#15803d',
+                            800: '#166534', 900: '#14532d',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Premium Colorful Button & Interactive Theme Styling */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .light .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        
+        /* Vibrant Color Keypad Pulsing Effects */
+        .btn-run {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+        .btn-run:active {
+            transform: scale(0.92);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+        }
+        .btn-boundary-4 {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+        }
+        .btn-boundary-4:active { transform: scale(0.92); box-shadow: 0 0 25px #06b6d4; }
+        
+        .btn-boundary-6 {
+            background: linear-gradient(135deg, #a855f7, #9333ea);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+        .btn-boundary-6:active { transform: scale(0.92); box-shadow: 0 0 25px #a855f7; }
+
+        .btn-wicket {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        .btn-wicket:active { transform: scale(0.92); box-shadow: 0 0 25px #ef4444; }
+
+        .btn-extra {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        .btn-extra:active { transform: scale(0.92); box-shadow: 0 0 20px #f59e0b; }
+
+        /* Wagon Wheel Interactive Canvas Layout */
+        #wagonWheelCanvas {
+            background: radial-gradient(circle, #1e3a1e 0%, #0f260f 70%, #071407 100%);
+            border: 3px solid #2c5e2c;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 light:bg-slate-50 light:text-slate-900 min-h-screen pb-24 transition-colors duration-300 overflow-x-hidden">
+
+    <!-- TOP CONTROL HEADER -->
+    <header class="sticky top-0 z-50 glass-panel shadow-xl px-4 py-3 flex justify-between items-center border-b border-slate-800 light:border-slate-200">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-cricket-600 to-emerald-400 p-2.5 rounded-2xl text-white shadow-lg shadow-cricket-500/30">
+                <i class="fas fa-gavel text-xl"></i>
+            </div>
+            <div>
+                <h1 id="app-title-banner" class="font-black text-lg tracking-wider bg-gradient-to-r from-cricket-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent uppercase">CricScore Ultra</h1>
+                <p id="match-status-ticker" class="text-[11px] text-slate-400 font-medium">Live Database Synced</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <!-- Dynamic Color Palette Theme Button -->
+            <button onclick="changeThemeColor()" class="p-2 rounded-xl bg-slate-900/80 text-cyan-400 border border-slate-800 hover:text-white transition">
+                <i class="fas fa-palette"></i>
+            </button>
+            <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-900/80 text-amber-400 border border-slate-800 transition">
+                <i id="theme-icon" class="fas fa-sun"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- VIEWS ENGINE CONTAINER -->
+    <main class="container mx-auto max-w-md p-4 space-y-4">
+
+        <!-- PAGE 1: DASHBOARD HOME -->
+        <section id="view-home" class="space-y-5 animate-fade-in">
+            <!-- Modern Play Store App Showcase Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cricket-800 via-slate-900 to-emerald-950 p-6 shadow-2xl border border-cricket-500/20">
+                <div class="absolute right-[-15px] bottom-[-15px] opacity-10 text-9xl text-cricket-400"><i class="fas fa-cricket-bat-ball"></i></div>
+                <span class="bg-cricket-500 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-widest shadow-md">Premium v3.1</span>
+                <h2 class="text-2xl font-black text-white mt-3 mb-1">প্রফেশনাল স্কোরবোর্ড</h2>
+                <p class="text-slate-300 text-xs leading-relaxed mb-5">সরাসরি ক্রিকবাজ স্টাইলের লাইভ ট্র্যাকিং, ওয়াগন হুইল গ্রাফিক্স এবং পিডিএফ রিপোর্ট জেনারেটর এনভায়রনমেন্ট।</p>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="switchView('view-setup')" class="bg-gradient-to-r from-cricket-500 to-emerald-600 text-white text-xs font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-cricket-600/30 hover:brightness-110 active:scale-95 transition flex justify-center items-center space-x-2">
+                        <i class="fas fa-plus"></i> <span>New Match</span>
+                    </button>
+                    <button onclick="switchView('view-history')" class="bg-slate-800/90 border border-slate-700 text-white text-xs font-bold py-3.5 px-4 rounded-xl active:scale-95 transition flex justify-center items-center space-x-2">
+                        <i class="fas fa-folder-open"></i> <span>Saved History</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Engine Analytics Row -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="glass-panel p-3 rounded-2xl text-center">
+                    <span class="text-[10px] text-slate-400 block mb-0.5">Total Match</span>
+                    <span id="home-stat-matches" class="text-xl font-black text-cricket-400">0</span>
+                </div>
+                <div class="glass-panel p-3 rounded-2xl text-center">
+                    <span class="text-[10px] text-slate-400 block mb-0.5">Active Teams</span>
+                    <span id="home-stat-teams" class="text-xl font-black text-cyan-400">4</span>
+                </div>
+                <div class="glass-panel p-3 rounded-2xl text-center">
+                    <span class="text-[10px] text-slate-400 block mb-0.5">Database</span>
+                    <span class="text-xs font-black text-emerald-400 uppercase block mt-1"><i class="fas fa-check-circle mr-1"></i>Local</span>
+                </div>
+            </div>
+
+            <!-- Recent Matches Module -->
+            <div class="space-y-3">
+                <h3 class="text-xs font-black uppercase tracking-wider text-slate-400 flex justify-between items-center px-1">
+                    <span>সাম্প্রতিক ম্যাচ ডাটাবেস</span>
+                    <i class="fas fa-database text-cricket-500"></i>
+                </h3>
+                <div id="home-recent-matches" class="space-y-2">
+                    <div class="glass-panel p-4 rounded-2xl text-center text-xs text-slate-400 italic">কোনো সংরক্ষিত ম্যাচ ডাটা পাওয়া যায়নি।</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 2: ADVANCED TOURNAMENT & MATCH SETUP -->
+        <section id="view-setup" class="hidden space-y-4">
+            <div class="glass-panel p-5 rounded-2xl shadow-xl space-y-4">
+                <h3 class="text-md font-black border-b border-slate-800 pb-2.5 text-cricket-400 uppercase tracking-wide flex items-center space-x-2">
+                    <i class="fas fa-sliders text-sm"></i> <span>Match Configuration Setup</span>
+                </h3>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-slate-400 font-bold mb-1">টুর্নামেন্টের নাম (Tournament)</label>
+                        <input id="setup-tournament" type="text" value="International Premier Cup 2026" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-cricket-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">টিম A (Batting XI)</label>
+                            <input id="setup-team-a" type="text" value="Rangpur Riders" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-cricket-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">টিম B (Bowling XI)</label>
+                            <input id="setup-team-b" type="text" value="Chittagong Kings" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-cricket-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">ম্যাচ ফরম্যাট (Format)</label>
+                            <select id="setup-format" onchange="autoConfigureOvers(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-cricket-500">
+                                <option value="T10">T10 League (2 Ov)</option>
+                                <option value="T20" selected>T20 Format (5 Ov)</option>
+                                <option value="ODI">ODI Match (50 Ov)</option>
+                                <option value="Custom">Custom Overs</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">মোট ওভার সংখ্যা</label>
+                            <input id="setup-overs" type="number" value="5" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-cricket-500">
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
+                        <span class="text-[10px] uppercase text-amber-500 font-black block">🏏 ওপেনিং স্কোয়াড সিলেকশন</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input id="setup-bat1" type="text" value="Rehman Sumon" placeholder="Striker Batsman" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 focus:border-cricket-500">
+                            <input id="setup-bat2" type="text" value="Sumon Rehman" placeholder="Non-Striker" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 focus:border-cricket-500">
+                        </div>
+                        <input id="setup-bowl" type="text" value="Sumon Rehman" placeholder="Opening Bowler" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 focus:border-cricket-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">ভেন্যু (Venue)</label>
+                            <input id="setup-venue" type="text" value="Mirpur National Stadium" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">Toss Winner</label>
+                            <select id="setup-toss" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2">
+                                <option value="TeamA">Team A (Selected Bat)</option>
+                                <option value="TeamB">Team B (Selected Bowl)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="launchMatchEngine()" class="w-full bg-gradient-to-r from-cricket-600 to-emerald-500 text-white font-black py-4 rounded-xl shadow-xl hover:brightness-110 active:scale-95 transition flex justify-center items-center space-x-2 text-sm uppercase tracking-wide">
+                    <i class="fas fa-bolt animate-bounce"></i> <span>STRAT THE MATCH</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- PAGE 3: LIVE SCORING CONSOLE (CRICBUZZ STYLE) -->
+        <section id="view-live" class="hidden space-y-4">
+            
+            <!-- Professional Main Scorecard Dashboard Header -->
+            <div id="live-card-capture" class="glass-panel rounded-3xl p-5 shadow-2xl border-l-4 border-emerald-500 relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950">
+                <div class="flex justify-between items-center mb-2">
+                    <div>
+                        <span id="live-txt-tournament" class="text-[10px] font-bold text-cricket-400 tracking-wider uppercase">TOURNAMENT</span>
+                        <h2 id="live-txt-teambat" class="text-xl font-black tracking-tight text-white mt-0.5">Team A Inning</h2>
+                    </div>
+                    <span id="live-txt-innings-badge" class="bg-emerald-500/20 text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">Innings 1</span>
+                </div>
+
+                <div class="flex items-baseline space-x-2 my-3">
+                    <span id="live-txt-score" class="text-5xl font-black text-white tracking-tight">0</span>
+                    <span class="text-3xl text-slate-500 font-light">/</span>
+                    <span id="live-txt-wickets" class="text-4xl font-extrabold text-red-500">0</span>
+                    <span class="text-xs text-slate-400 font-semibold ml-4">Overs: <span id="live-txt-overs" class="text-slate-100 font-black text-sm">0.0</span> / <span id="live-txt-maxovers">5</span></span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800 text-center text-[11px] font-bold text-slate-400">
+                    <div>CRR: <span id="live-txt-crr" class="text-slate-200">0.00</span></div>
+                    <div>Target: <span id="live-txt-target" class="text-amber-400">-</span></div>
+                    <div>Need: <span id="live-txt-need" class="text-cyan-400">-</span></div>
+                </div>
+            </div>
+
+            <!-- Live Batsmen Dynamic Stats Table -->
+            <div class="glass-panel rounded-2xl p-4 shadow-md">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-800 font-black tracking-wide uppercase">
+                            <th class="pb-2">ব্যাটসম্যান (Batting)</th>
+                            <th class="pb-2 text-center">রান</th>
+                            <th class="pb-2 text-center">বল</th>
+                            <th class="pb-2 text-center">৪</th>
+                            <th class="pb-2 text-center">৬</th>
+                            <th class="pb-2 text-right">SR</th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-bold">
+                        <tr id="live-row-b1" class="text-cricket-400 border-b border-slate-900">
+                            <td class="py-3 flex items-center"><i id="live-icon-b1" class="fas fa-gavel text-[10px] mr-1.5 text-amber-400"></i> <span id="live-txt-b1-name">Striker</span></td>
+                            <td id="live-txt-b1-r" class="text-center text-white">0</td>
+                            <td id="live-txt-b1-b" class="text-center">0</td>
+                            <td id="live-txt-b1-4" class="text-center">0</td>
+                            <td id="live-txt-b1-6" class="text-center">0</td>
+                            <td id="live-txt-b1-sr" class="text-right text-slate-400">0.0</td>
+                        </tr>
+                        <tr id="live-row-b2" class="text-slate-400">
+                            <td class="py-3 flex items-center"><i id="live-icon-b2" class="fas fa-gavel text-[10px] mr-1.5 opacity-0 text-amber-400"></i> <span id="live-txt-b2-name">Non-Striker</span></td>
+                            <td id="live-txt-b2-r" class="text-center text-white">0</td>
+                            <td id="live-txt-b2-b" class="text-center">0</td>
+                            <td id="live-txt-b2-4" class="text-center">0</td>
+                            <td id="live-txt-b2-6" class="text-center">0</td>
+                            <td id="live-txt-b2-sr" class="text-right text-slate-400">0.0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Live Bowler Stat Row -->
+            <div class="glass-panel rounded-2xl p-4 shadow-md flex justify-between items-center text-xs font-bold">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    <span id="live-txt-bowler-name" class="text-slate-200">Bowler</span>
+                </div>
+                <div class="grid grid-cols-4 gap-4 text-center">
+                    <div>O: <span id="live-txt-bowl-o" class="text-white">0.0</span></div>
+                    <div>M: <span id="live-txt-bowl-m" class="text-white">0</span></div>
+                    <div>R: <span id="live-txt-bowl-r" class="text-white">0</span></div>
+                    <div>W: <span id="live-txt-bowl-w" class="text-red-500">0</span></div>
+                </div>
+            </div>
+
+            <!-- Intersecting Over Timeline Ribbon -->
+            <div class="glass-panel rounded-2xl p-3 flex items-center space-x-2 overflow-x-auto shadow-inner">
+                <span class="text-[10px] font-black uppercase text-slate-500 tracking-wider">This&nbsp;Over:</span>
+                <div id="live-timeline-balls" class="flex space-x-2">
+                    <span class="text-xs text-slate-500 italic">No deliveries recorded</span>
+                </div>
+            </div>
+
+            <!-- INTERACTIVE WAGON WHEEL GRAPHICS MODULE -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <span class="text-[10px] font-black uppercase text-cyan-400 tracking-wider block"><i class="fas fa-circle-dot mr-1"></i> Interactive Wagon Wheel Selection (Click Region)</span>
+                <div class="flex justify-center">
+                    <canvas id="wagonWheelCanvas" width="240" height="240" class="rounded-full shadow-lg cursor-pointer"></canvas>
+                </div>
+                <div class="text-center text-[11px] text-slate-400">
+                    Selected Zone: <span id="wagon-selected-zone" class="text-amber-400 font-black">None (Default Straight)</span>
+                </div>
+            </div>
+
+            <!-- PREMIUM COLORFUL INTERACTIVE KEYPAD CONTROLS -->
+            <div class="grid grid-cols-4 gap-3 pt-2">
+                <button onclick="processBallBallEngine(0)" class="btn-run bg-slate-800 text-white font-black py-4 rounded-2xl text-lg border border-slate-700">0</button>
+                <button onclick="processBallBallEngine(1)" class="btn-run bg-slate-800 text-white font-black py-4 rounded-2xl text-lg border border-slate-700">1</button>
+                <button onclick="processBallBallEngine(2)" class="btn-run bg-slate-800 text-white font-black py-4 rounded-2xl text-lg border border-slate-700">2</button>
+                <button onclick="processBallBallEngine(3)" class="btn-run bg-slate-800 text-white font-black py-4 rounded-2xl text-lg border border-slate-700">3</button>
+                
+                <button onclick="processBallBallEngine(4)" class="btn-boundary-4 text-white font-black py-4 rounded-2xl text-xl">4</button>
+                <button onclick="processBallBallEngine(6)" class="btn-boundary-6 text-white font-black py-4 rounded-2xl text-xl">6</button>
+                <button onclick="processExtraEngine('WD')" class="btn-extra text-white font-bold py-4 rounded-2xl text-sm">WD</button>
+                <button onclick="processExtraEngine('NB')" class="btn-extra text-white font-bold py-4 rounded-2xl text-sm">NB</button>
+                
+                <button onclick="processExtraEngine('LB')" class="bg-slate-900 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl text-xs active:scale-95 transition">Leg Bye</button>
+                <button onclick="processExtraEngine('B')" class="bg-slate-900 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl text-xs active:scale-95 transition">Bye</button>
+                <button onclick="triggerAdvancedWicketModal()" class="btn-wicket text-white font-black py-3.5 rounded-xl text-xs uppercase tracking-wider col-span-2">WICKET</button>
+            </div>
+
+            <!-- Operations Controller Row -->
+            <div class="grid grid-cols-3 gap-2.5 pt-1">
+                <button onclick="undoLastBallEngine()" class="bg-slate-900 border border-slate-800 text-red-400 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition flex justify-center items-center space-x-1">
+                    <i class="fas fa-undo"></i> <span>Undo Ball</span>
+                </button>
+                <button onclick="switchView('view-scorecard')" class="bg-slate-900 border border-slate-800 text-cyan-400 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition flex justify-center items-center space-x-1">
+                    <i class="fas fa-chart-line"></i> <span>Analytics</span>
+                </button>
+                <button onclick="forceInningsBreak()" class="bg-amber-600/20 border border-amber-500/30 text-amber-400 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition flex justify-center items-center space-x-1">
+                    <i class="fas fa-step-forward"></i> <span>End Inning</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- PAGE 4: ADVANCED SCORECARD & WORM GRAPH ANALYTICS -->
+        <section id="view-scorecard" class="hidden space-y-4">
+            <div id="full-scorecard-print-node" class="glass-panel p-5 rounded-3xl shadow-2xl space-y-5 bg-slate-950">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <div>
+                        <h2 class="text-md font-black text-cricket-400 uppercase tracking-wider">Match Statistical Report</h2>
+                        <span id="scorecard-date-lbl" class="text-[10px] text-slate-500 font-bold block">Date: June 2026</span>
+                    </div>
+                    <i class="fas fa-square-poll-vertical text-xl text-emerald-500"></i>
+                </div>
+
+                <!-- Win Probability Simulator Module -->
+                <div class="space-y-1.5 text-xs font-bold">
+                    <div class="flex justify-between text-slate-400 text-[11px]">
+                        <span id="scr-team-a-lbl">Team A</span>
+                        <span id="scr-team-b-lbl">Team B</span>
+                    </div>
+                    <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden flex border border-slate-800">
+                        <div id="prob-bar-a" class="bg-gradient-to-r from-emerald-500 to-green-400 h-full transition-all duration-500" style="width: 50%"></div>
+                        <div id="prob-bar-b" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-500" style="width: 50%"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-500">
+                        <span id="prob-txt-a">50%</span>
+                        <span class="uppercase tracking-widest text-[9px]">Live Win Probability</span>
+                        <span id="prob-txt-b">50%</span>
+                    </div>
+                </div>
+
+                <!-- Chart JS Canvas Wrapper -->
+                <div class="space-y-2">
+                    <span class="text-[10px] font-black uppercase text-slate-400 block">Worm Performance Graph</span>
+                    <div class="p-2 bg-slate-900/60 rounded-2xl border border-slate-800">
+                        <canvas id="analyticsWormChart" width="380" height="190"></canvas>
+                    </div>
+                </div>
+
+                <!-- Advanced Operational Export Buttons (Non-Printable Elements Wrapper) -->
+                <div class="grid grid-cols-2 gap-3 pt-2" data-html2canvas-ignore="true">
+                    <button onclick="exportScorecardPDF()" class="bg-red-600/20 border border-red-500/30 text-red-400 text-xs font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition flex justify-center items-center space-x-2">
+                        <i class="fas fa-file-pdf"></i> <span>Export PDF</span>
+                    </button>
+                    <button onclick="exportScorecardImage()" class="bg-cyan-600/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold py-3 rounded-xl hover:bg-cyan-600 hover:text-white transition flex justify-center items-center space-x-2">
+                        <i class="fas fa-image"></i> <span>Save Image</span>
+                    </button>
+                </div>
+
+                <button onclick="finalizeAndSaveMatchRecord()" class="w-full bg-emerald-600 text-white text-xs font-black py-3.5 rounded-xl shadow-lg uppercase tracking-wider" data-html2canvas-ignore="true">
+                    ম্যাচ সমাপ্ত করুন ও সেভ করুন
+                </button>
+            </div>
+        </section>
+
+        <!-- PAGE 5: HISTORICAL DATA ARCHIVES -->
+        <section id="view-history" class="hidden space-y-4">
+            <div class="glass-panel p-4 rounded-2xl shadow-xl">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+                    <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center space-x-2">
+                        <i class="fas fa-database text-cricket-400"></i> <span>Match Archives Log</span>
+                    </h3>
+                    <button onclick="clearAllHistoryRecords()" class="text-[10px] bg-red-600/20 text-red-400 font-bold px-2.5 py-1 rounded-lg">Clear All</button>
+                </div>
+                <div id="history-log-stack" class="space-y-3">
+                    <!-- Dynamic Injections -->
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW PAGE 6: HIGH-END PROFESSIONAL DEVELOPER INFO PAGE -->
+        <section id="view-developer" class="hidden space-y-4">
+            <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-slate-800 relative overflow-hidden text-center space-y-5">
+                <div class="absolute -right-16 -top-16 w-36 h-36 bg-cricket-500/10 rounded-full blur-2xl"></div>
+                
+                <div class="relative inline-block">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-cricket-500 via-emerald-400 to-cyan-400 p-1 mx-auto shadow-xl">
+                        <div class="w-full h-full bg-slate-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-code text-3xl text-emerald-400 animate-pulse"></i>
+                        </div>
+                    </div>
+                    <span class="absolute bottom-0 right-2 bg-emerald-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Verified</span>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-black text-white tracking-wide">CricScore Core Engine</h3>
+                    <p class="text-xs text-cricket-400 font-bold mt-0.5">Premium Performance Suite</p>
+                </div>
+
+                <p class="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+                    This application was created and developed by Rehman Sumon. All rights reserved. Unauthorized copying, modification, or redistribution is prohibited.
+                </p>
+
+                <div class="grid grid-cols-2 gap-3 text-left text-xs bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80">
+                    <div>
+                        <span class="text-slate-500 font-bold block text-[10px] uppercase">Engine Version</span>
+                        <strong class="text-slate-200">v1.0.0 (Stable)</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 font-bold block text-[10px] uppercase">Release Environment</span>
+                        <strong class="text-emerald-400">REHMAN SUMON</strong>
+                    </div>
+                    <div class="col-span-2 border-t border-slate-800/80 pt-2 mt-1">
+                        <span class="text-slate-500 font-bold block text-[10px] uppercase">Supported Platform</span>
+                        <strong class="text-cyan-400"><i class="fab fa-android mr-1"></i>Web / Hybrid Play Store App wrapper ready</strong>
+                    </div>
+                </div>
+
+                <div class="flex justify-center space-x-3 pt-2">
+                    <a href="https://www.facebook.com/REHMAN.X.XUMON" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition"><i class="fab fa-facebook"></i></a>
+                    <a href="https://wa.me/8801792023356" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition"><i class="fab fa-whatsapp"></i></a>
+                    <a href="t.me/REHMANxSUMON" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition"><i class="fas fa-telegram"></i></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PREMIUM FLEXIBLE NAVIGATION FOOTER -->
+    <nav class="fixed bottom-0 left-0 right-0 glass-panel border-t border-slate-800 light:border-slate-200 z-50 flex justify-around py-3 shadow-2xl">
+        <button onclick="switchView('view-home')" class="nav-btn-node text-cricket-400 flex flex-col items-center space-y-1 transition active:scale-90">
+            <i class="fas fa-home text-lg"></i><span class="text-[10px] font-bold">Home</span>
+        </button>
+        <button onclick="switchView('view-setup')" class="nav-btn-node text-slate-500 flex flex-col items-center space-y-1 transition active:scale-90">
+            <i class="fas fa-plus-circle text-lg"></i><span class="text-[10px] font-bold">Setup</span>
+        </button>
+        <button onclick="switchView('view-live')" class="nav-btn-node text-slate-500 flex flex-col items-center space-y-1 transition active:scale-90">
+            <i class="fas fa-satellite-dish text-lg"></i><span class="text-[10px] font-bold">Live Board</span>
+        </button>
+        <button onclick="switchView('view-history')" class="nav-btn-node text-slate-500 flex flex-col items-center space-y-1 transition active:scale-90">
+            <i class="fas fa-database text-lg"></i><span class="text-[10px] font-bold">History</span>
+        </button>
+        <button onclick="switchView('view-developer')" class="nav-btn-node text-slate-500 flex flex-col items-center space-y-1 transition active:scale-90">
+            <i class="fas fa-user-shield text-lg"></i><span class="text-[10px] font-bold">Developer</span>
+        </button>
+    </nav>
+
+    <!-- SOUND ELEMENTS MODULE -->
+    <audio id="snd-effect-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
+    <audio id="snd-effect-cheer" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav" preload="auto"></audio>
+
+    <!-- ROBUST SCRIPTS STATE ENGINE -->
+    <script>
+        // Centralized Application State Storage Struct
+        let matchEngineState = {
+            tournament: "", venue: "", teamA: "", teamB: "", maxOvers: 5,
+            currentInnings: 1, targetScore: 0, score: 0, wickets: 0, totalBalls: 0,
+            ballsInOver: 0, currentOverRuns: [], historicalProgressInnings1: [0],
+            historicalProgressInnings2: [],
+            batsmen: [
+                { name: "Player 1", runs: 0, balls: 0, fours: 0, sixes: 0, isStrike: true },
+                { name: "Player 2", runs: 0, balls: 0, fours: 0, sixes: 0, isStrike: false }
+            ],
+            bowler: { name: "Bowler", overs: 0, runs: 0, wickets: 0, balls: 0 },
+            wagonWheelData: [],
+            selectedZone: "Straight"
+        };
+
+        let rollbackHistoryStack = [];
+        let wormChartObject = null;
+        const colorPalettes = ['#22c55e', '#06b6d4', '#eab308', '#ec4899'];
+        let activePaletteIndex = 0;
+
+        // Custom Single Page View Navigation core Router
+        function switchView(viewId) {
+            triggerAudioFeedback('click');
+            document.querySelectorAll('main > section').forEach(section => section.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+
+            const navButtons = document.querySelectorAll('nav button');
+            navButtons.forEach(btn => btn.classList.replace('text-cricket-400', 'text-slate-500'));
+            
+            if(viewId === 'view-home') navButtons[0].classList.replace('text-slate-500', 'text-cricket-400');
+            if(viewId === 'view-setup') navButtons[1].classList.replace('text-slate-500', 'text-cricket-400');
+            if(viewId === 'view-live') navButtons[2].classList.replace('text-slate-500', 'text-cricket-400');
+            if(viewId === 'view-history') {
+                navButtons[3].classList.replace('text-slate-500', 'text-cricket-400');
+                renderHistoryArchivesGrid();
+            }
+            if(viewId === 'view-developer') navButtons[4].classList.replace('text-slate-500', 'text-cricket-400');
+
+            if(viewId === 'view-scorecard') {
+                renderWormChartAnalytics();
+                syncAnalyticsProbabilityUI();
+            }
+        }
+
+        // Automatic Configuration Mapping helper
+        function autoConfigureOvers(format) {
+            let oversInput = document.getElementById('setup-overs');
+            if(format === "T10") oversInput.value = 2;
+            else if(format === "T20") oversInput.value = 5;
+            else if(format === "ODI") oversInput.value = 50;
+        }
+
+        function triggerAudioFeedback(type) {
+            try {
+                let soundNode = (type === 'cheer') ? document.getElementById('snd-effect-cheer') : document.getElementById('snd-effect-click');
+                soundNode.currentTime = 0;
+                soundNode.play();
+            } catch(e) { console.warn("Audio playback locked."); }
+        }
+
+        // Theme Toggle Engine
+        function toggleTheme() {
+            const htmlNode = document.documentElement;
+            if(htmlNode.classList.contains('dark')) {
+                htmlNode.classList.remove('dark');
+                htmlNode.classList.add('light');
+                document.getElementById('theme-icon').className = "fas fa-moon";
+            } else {
+                htmlNode.classList.remove('light');
+                htmlNode.classList.add('dark');
+                document.getElementById('theme-icon').className = "fas fa-sun";
+            }
+        }
+
+        function changeThemeColor() {
+            activePaletteIndex = (activePaletteIndex + 1) % colorPalettes.length;
+            let chosenColor = colorPalettes[activePaletteIndex];
+            document.getElementById('app-title-banner').style.color = chosenColor;
+            document.getElementById('match-status-ticker').innerText = `Theme Synced: ${chosenColor}`;
+        }
+
+        // Canvas Wagon Wheel Renderer Mapping Execution
+        function setupWagonWheelCanvasCore() {
+            const canvas = document.getElementById('wagonWheelCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            function drawFieldCircle() {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctx.beginPath();
+                ctx.arc(canvas.width/2, canvas.height/2, 110, 0, 2*Math.PI);
+                ctx.fillStyle = '#1b431b';
+                ctx.fill();
+                ctx.strokeStyle = '#387a38';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Pitch Line Drawing
+                ctx.fillStyle = '#d2b48c';
+                ctx.fillRect(canvas.width/2 - 6, canvas.height/2 - 25, 12, 50);
+            }
+
+            canvas.addEventListener('click', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left - canvas.width/2;
+                const y = e.clientY - rect.top - canvas.height/2;
+                let angle = Math.atan2(y, x) * (180 / Math.PI);
+                if (angle < 0) angle += 360;
+
+                if (angle >= 315 || angle < 45) matchEngineState.selectedZone = "Off Side / Third Man";
+                else if (angle >= 45 && angle < 135) matchEngineState.selectedZone = "Straight / V";
+                else if (angle >= 135 && angle < 225) matchEngineState.selectedZone = "Leg Side / Mid-Wicket";
+                else matchEngineState.selectedZone = "Fine Leg / Square";
+
+                document.getElementById('wagon-selected-zone').innerText = matchEngineState.selectedZone;
+                drawFieldCircle();
+                
+                // Active pointer selector mapping line
+                ctx.beginPath();
+                ctx.moveTo(canvas.width/2, canvas.height/2);
+                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            });
+
+            drawFieldCircle();
+        }
+
+        // Launch Core Live Match Data State
+        function launchMatchEngine() {
+            matchEngineState.tournament = document.getElementById('setup-tournament').value;
+            matchEngineState.teamA = document.getElementById('setup-team-a').value;
+            matchEngineState.teamB = document.getElementById('setup-team-b').value;
+            matchEngineState.maxOvers = parseInt(document.getElementById('setup-overs').value) || 5;
+            matchEngineState.venue = document.getElementById('setup-venue').value;
+            
+            matchEngineState.batsmen[0].name = document.getElementById('setup-bat1').value || "Striker";
+            matchEngineState.batsmen[1].name = document.getElementById('setup-bat2').value || "Non-Striker";
+            matchEngineState.bowler.name = document.getElementById('setup-bowl').value || "Bowler";
+
+            // State Reset Pipeline
+            matchEngineState.score = 0; matchEngineState.wickets = 0; matchEngineState.totalBalls = 0;
+            matchEngineState.ballsInOver = 0; matchEngineState.currentOverRuns = [];
+            matchEngineState.historicalProgressInnings1 = [0]; matchEngineState.historicalProgressInnings2 = [];
+            matchEngineState.currentInnings = 1; matchEngineState.targetScore = 0;
+            rollbackHistoryStack = [];
+
+            localStorage.setItem('cached_live_match', JSON.stringify(matchEngineState));
+            syncLiveScoreboardDOM();
+            setupWagonWheelCanvasCore();
+            switchView('view-live');
+        }
+
+        // Live Processing Calculation Pipeline
+        function processBallBallEngine(runs) {
+            if(matchEngineState.totalBalls >= matchEngineState.maxOvers * 6 || matchEngineState.wickets >= 10) {
+                alert("নির্ধারিত ওভার অথবা উইকেট শেষ! অনুগ্রহ করে ইনিংস সমাপ্ত করুন।");
+                return;
+            }
+
+            if(runs === 4 || runs === 6) triggerAudioFeedback('cheer');
+            else triggerAudioFeedback('click');
+
+            // Snapshot Pushed onto stack mapping rollback capabilities
+            rollbackHistoryStack.push(JSON.parse(JSON.stringify(matchEngineState)));
+
+            let activeStriker = matchEngineState.batsmen.find(b => b.isStrike) || matchEngineState.batsmen[0];
+            activeStriker.runs += runs;
+            activeStriker.balls += 1;
+            if(runs === 4) activeStriker.fours += 1;
+            if(runs === 6) activeStriker.sixes += 1;
+
+            matchEngineState.score += runs;
+            matchEngineState.bowler.runs += runs;
+            matchEngineState.bowler.balls += 1;
+            matchEngineState.ballsInOver += 1;
+            matchEngineState.totalBalls += 1;
+            matchEngineState.currentOverRuns.push(runs);
+
+            // Wagon Wheel Node Injection
+            matchEngineState.wagonWheelData.push({ runs: runs, zone: matchEngineState.selectedZone });
+
+            if(runs % 2 !== 0) alternateStrikerStrike();
+
+            // Checking Boundary Over Condition Met
+            if(matchEngineState.ballsInOver === 6) {
+                executeOverInningsTransitionBoundary();
+            }
+
+            evaluateTargetChaseCondition();
+            localStorage.setItem('cached_live_match', JSON.stringify(matchEngineState));
+            syncLiveScoreboardDOM();
+        }
+
+        function processExtraEngine(type) {
+            rollbackHistoryStack.push(JSON.parse(JSON.stringify(matchEngineState)));
+            triggerAudioFeedback('click');
+
+            if(type === 'WD' || type === 'NB') {
+                matchEngineState.score += 1;
+                matchEngineState.bowler.runs += 1;
+                matchEngineState.currentOverRuns.push(type);
+            } else { // Bye/Leg Bye
+                matchEngineState.score += 1;
+                matchEngineState.currentOverRuns.push(type);
+                matchEngineState.totalBalls += 1;
+                matchEngineState.ballsInOver += 1;
+                let activeStriker = matchEngineState.batsmen.find(b => b.isStrike);
+                if(activeStriker) activeStriker.balls += 1;
+            }
+
+            if(matchEngineState.ballsInOver === 6) {
+                executeOverInningsTransitionBoundary();
+            }
+
+            evaluateTargetChaseCondition();
+            localStorage.setItem('cached_live_match', JSON.stringify(matchEngineState));
+            syncLiveScoreboardDOM();
+        }
+
+        // Advanced Wicket Drop Down Modal Execution
+        function triggerAdvancedWicketModal() {
+            if(matchEngineState.wickets >= 10) return;
+            let type = prompt("উইকেটের ধরন লিখুন: \n1. Bowled\n2. Caught\n3. Run Out\n4. Stumping", "Caught");
+            if(!type) return;
+
+            rollbackHistoryStack.push(JSON.parse(JSON.stringify(matchEngineState)));
+            triggerAudioFeedback('click');
+
+            matchEngineState.wickets += 1;
+            if(type !== "Run Out") matchEngineState.bowler.wickets += 1;
+            
+            matchEngineState.bowler.balls += 1;
+            matchEngineState.ballsInOver += 1;
+            matchEngineState.totalBalls += 1;
+            matchEngineState.currentOverRuns.push("W-" + type.substring(0,3));
+
+            let activeStriker = matchEngineState.batsmen.find(b => b.isStrike);
+            if(activeStriker) activeStriker.balls += 1;
+
+            if(matchEngineState.wickets < 10) {
+                let nextBatsmanName = prompt("নতুন ব্যাটসম্যানের নাম প্রবেশ করুন:", "Player " + (matchEngineState.wickets + 2));
+                let idx = matchEngineState.batsmen.findIndex(b => b.isStrike);
+                matchEngineState.batsmen[idx] = { name: nextBatsmanName || "New Batsman", runs: 0, balls: 0, fours: 0, sixes: 0, isStrike: true };
+            } else {
+                alert("সব উইকেট শেষ! ইনিংসের সমাপ্তি ঘটেছে।");
+                forceInningsBreak();
+                return;
+            }
+
+            if(matchEngineState.ballsInOver === 6) {
+                executeOverInningsTransitionBoundary();
+            }
+
+            localStorage.setItem('cached_live_match', JSON.stringify(matchEngineState));
+            syncLiveScoreboardDOM();
+        }
+
+        function executeOverInningsTransitionBoundary() {
+            if(matchEngineState.currentInnings === 1) {
+                matchEngineState.historicalProgressInnings1.push(matchEngineState.score);
+            } else {
+                matchEngineState.historicalProgressInnings2.push(matchEngineState.score);
+            }
+            
+            alternateStrikerStrike();
+            matchEngineState.ballsInOver = 0;
+            matchEngineState.currentOverRuns = [];
+            
+            let nextBowler = prompt("ওভার সমাপ্ত! নতুন বোলারের নাম প্রবেশ করুন:", "Bowler " + (Math.floor(matchEngineState.totalBalls/6) + 1));
+            matchEngineState.bowler = { name: nextBowler || "New Bowler", overs: 0, runs: 0, wickets: 0, balls: 0 };
+        }
+
+        function alternateStrikerStrike() {
+            matchEngineState.batsmen.forEach(b => b.isStrike = !b.isStrike);
+        }
+
+        // Target Logic Evaluator Engine
+        function evaluateTargetChaseCondition() {
+            if(matchEngineState.currentInnings === 2 && matchEngineState.score >= matchEngineState.targetScore) {
+                alert(`ম্যাচ সমাপ্ত! ${matchEngineState.teamB} জয়লাভ করেছে।`);
+                switchView('view-scorecard');
+            }
+        }
+
+        // Innings Switch Logic 
+        function forceInningsBreak() {
+            if(matchEngineState.currentInnings === 1) {
+                matchEngineState.currentInnings = 2;
+                matchEngineState.targetScore = matchEngineState.score + 1;
+                
+                // Swap Batting Side Name Tags
+                let tempName = matchEngineState.teamA;
+                matchEngineState.teamA = matchEngineState.teamB;
+                matchEngineState.teamB = tempName;
+
+                // Reset Dynamic Core parameters for second inning
+                matchEngineState.score = 0;
+                matchEngineState.wickets = 0;
+                matchEngineState.totalBalls = 0;
+                matchEngineState.ballsInOver = 0;
+                matchEngineState.currentOverRuns = [];
+
+                matchEngineState.batsmen = [
+                    { name: prompt("২য় ইনিংসের ১ম ব্যাটসম্যান:", "Opener A"), runs: 0, balls: 0, fours: 0, sixes: 0, isStrike: true },
+                    { name: prompt("২য় ইনিংসের ২য় ব্যাটসম্যান:", "Opener B"), runs: 0, balls: 0, fours: 0, sixes: 0, isStrike: false }
+                ];
+                matchEngineState.bowler = { name: prompt("২য় ইনিংসের ১ম বোলার:", "Bowler Elite"), overs: 0, runs: 0, wickets: 0, balls: 0 };
+
+                alert(`১ম ইনিংস সমাপ্ত। ২য় ইনিংসের টার্গেট: ${matchEngineState.targetScore}`);
+                syncLiveScoreboardDOM();
+            } else {
+                alert("ম্যাচ ইতিমধ্যে ২য় ইনিংসে রয়েছে। স্কোরকার্ড চেক করুন।");
+                switchView('view-scorecard');
+            }
+        }
+
+        function undoLastBallEngine() {
+            if(rollbackHistoryStack.length > 0) {
+                matchEngineState = rollbackHistoryStack.pop();
+                syncLiveScoreboardDOM();
+                triggerAudioFeedback('click');
+            } else {
+                alert("রোলব্যাক করার মতো কোনো হিস্ট্রি পাওয়া যায়নি।");
+            }
+        }
+
+        // Dynamic Scoreboard UI Binder Engine
+        function syncLiveScoreboardDOM() {
+            document.getElementById('live-txt-tournament').innerText = matchEngineState.tournament;
+            document.getElementById('live-txt-teambat').innerText = matchEngineState.teamA;
+            document.getElementById('live-txt-score').innerText = matchEngineState.score;
+            document.getElementById('live-txt-wickets').innerText = matchEngineState.wickets;
+            document.getElementById('live-txt-maxovers').innerText = matchEngineState.maxOvers;
+            
+            let computedOvers = Math.floor(matchEngineState.totalBalls / 6) + "." + (matchEngineState.totalBalls % 6);
+            document.getElementById('live-txt-overs').innerText = computedOvers;
+
+            let runrate = (matchEngineState.totalBalls > 0) ? (matchEngineState.score / (matchEngineState.totalBalls / 6)).toFixed(2) : "0.00";
+            document.getElementById('live-txt-crr').innerText = runrate;
+
+            if(matchEngineState.currentInnings === 2) {
+                document.getElementById('live-txt-innings-badge').innerText = "Innings 2";
+                document.getElementById('live-txt-target').innerText = matchEngineState.targetScore;
+                document.getElementById('live-txt-need').innerText = (matchEngineState.targetScore - matchEngineState.score);
+            } else {
+                document.getElementById('live-txt-innings-badge').innerText = "Innings 1";
+                document.getElementById('live-txt-target').innerText = "-";
+                document.getElementById('live-txt-need').innerText = "-";
+            }
+
+            // Bind Batsmen DOM Elements
+            const b1 = matchEngineState.batsmen[0]; const b2 = matchEngineState.batsmen[1];
+            document.getElementById('live-txt-b1-name').innerText = b1.name;
+            document.getElementById('live-txt-b1-r').innerText = b1.runs;
+            document.getElementById('live-txt-b1-b').innerText = b1.balls;
+            document.getElementById('live-txt-b1-4').innerText = b1.fours;
+            document.getElementById('live-txt-b1-6').innerText = b1.sixes;
+            document.getElementById('live-txt-b1-sr').innerText = (b1.balls > 0) ? ((b1.runs/b1.balls)*100).toFixed(1) : "0.0";
+
+            document.getElementById('live-txt-b2-name').innerText = b2.name;
+            document.getElementById('live-txt-b2-r').innerText = b2.runs;
+            document.getElementById('live-txt-b2-b').innerText = b2.balls;
+            document.getElementById('live-txt-b2-4').innerText = b2.fours;
+            document.getElementById('live-txt-b2-6').innerText = b2.sixes;
+            document.getElementById('live-txt-b2-sr').innerText = (b2.balls > 0) ? ((b2.runs/b2.balls)*100).toFixed(1) : "0.0";
+
+            document.getElementById('live-icon-b1').style.opacity = b1.isStrike ? "1" : "0";
+            document.getElementById('live-icon-b2').style.opacity = b2.isStrike ? "1" : "0";
+
+            // Bind Bowler DOM
+            document.getElementById('live-txt-bowler-name').innerText = matchEngineState.bowler.name;
+            document.getElementById('live-txt-bowl-o').innerText = Math.floor(matchEngineState.bowler.balls / 6) + "." + (matchEngineState.bowler.balls % 6);
+            document.getElementById('live-txt-bowl-r').innerText = matchEngineState.bowler.runs;
+            document.getElementById('live-txt-bowl-w').innerText = matchEngineState.bowler.wickets;
+
+            // Render Ball Node Matrix Pills
+            let ribbon = document.getElementById('live-timeline-balls');
+            ribbon.innerHTML = '';
+            if(matchEngineState.currentOverRuns.length === 0) {
+                ribbon.innerHTML = `<span class="text-xs text-slate-500 italic">নতুন ওভার শুরু করার জন্য প্রস্তুত</span>`;
+            } else {
+                matchEngineState.currentOverRuns.forEach(ball => {
+                    let colorClass = "bg-slate-800 text-white";
+                    if(ball === 4) colorClass = "bg-cyan-600 font-black text-white";
+                    if(ball === 6) colorClass = "bg-purple-600 font-black text-white animate-bounce";
+                    if(ball.toString().startsWith("W")) colorClass = "bg-red-600 font-black text-white";
+                    if(ball === "WD" || ball === "NB") colorClass = "bg-amber-500 text-slate-950 font-black";
+                    
+                    ribbon.innerHTML += `<span class="w-7 h-7 text-[10px] rounded-full flex items-center justify-center font-bold shadow ${colorClass}">${ball}</span>`;
+                });
+            }
+        }
+
+        // Live Realtime Analytics Probability Calculator
+        function syncAnalyticsProbabilityUI() {
+            document.getElementById('scr-team-a-lbl').innerText = matchEngineState.teamA;
+            document.getElementById('scr-team-b-lbl').innerText = matchEngineState.teamB;
+
+            let baseFactor = matchEngineState.score > 0 ? matchEngineState.score : 5;
+            let lossFactor = (10 - matchEngineState.wickets) * 15;
+            let calculation = Math.min(Math.max(Math.round((baseFactor / (baseFactor + lossFactor)) * 100), 20), 80);
+            
+            document.getElementById('prob-bar-a').style.width = calculation + "%";
+            document.getElementById('prob-bar-b').style.width = (100 - calculation) + "%";
+            document.getElementById('prob-txt-a').innerText = calculation + "%";
+            document.getElementById('prob-txt-b').innerText = (100 - calculation) + "%";
+        }
+
+        // Chart JS Graph Generation Framework Core
+        function renderWormChartAnalytics() {
+            const ctx = document.getElementById('analyticsWormChart').getContext('2d');
+            if(wormChartObject) wormChartObject.destroy();
+
+            let labelsCount = Array.from({length: matchEngineState.maxOvers + 1}, (_, i) => "Ov " + i);
+            
+            wormChartObject = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labelsCount.slice(0, matchEngineState.historicalProgressInnings1.length),
+                    datasets: [{
+                        label: 'Innings 1 Path',
+                        data: matchEngineState.historicalProgressInnings1,
+                        borderColor: '#22c55e',
+                        borderWidth: 3,
+                        tension: 0.2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // PDF Generation Export Controller Engine
+        function exportScorecardPDF() {
+            const node = document.getElementById('full-scorecard-print-node');
+            let optionsSet = { margin: 10, filename: 'Match_Scorecard_CricScore.pdf', image: {type: 'jpeg', quality: 0.98}, html2canvas: {scale: 2}, jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'} };
+            html2pdf().set(optionsSet).from(node).save();
+        }
+
+        // Image Snapshot Storage Engine
+        function exportScorecardImage() {
+            const targetNode = document.getElementById('full-scorecard-print-node');
+            html2canvas(targetNode).then(canvas => {
+                let clickableAnchor = document.createElement('a');
+                clickableAnchor.download = 'Scorecard_Capture.png';
+                clickableAnchor.href = canvas.toDataURL();
+                clickableAnchor.click();
+            });
+        }
+
+        // Permanent Archival Grid Save
+        function finalizeAndSaveMatchRecord() {
+            let logStack = JSON.parse(localStorage.getItem('match_history_db')) || [];
+            logStack.unshift(JSON.parse(JSON.stringify(matchEngineState)));
+            localStorage.setItem('match_history_db', JSON.stringify(logStack));
+            localStorage.removeItem('cached_live_match');
+            
+            alert("ম্যাচ রিপোর্ট স্থায়ী লোকাল ডাটাবেসে সফলভাবে আরকাইভ করা হয়েছে!");
+            switchView('view-home');
+            refreshHomeDashboardMetrics();
+        }
+
+        function renderHistoryArchivesGrid() {
+            let logStack = JSON.parse(localStorage.getItem('match_history_db')) || [];
+            let container = document.getElementById('history-log-stack');
+            container.innerHTML = '';
+
+            if(logStack.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-500 text-center py-6">কোনো হিস্ট্রি রেকর্ড ডাটাবেসে নেই।</div>`;
+                return;
+            }
+
+            logStack.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-xs space-y-2">
+                        <div class="flex justify-between font-bold">
+                            <span class="text-emerald-400 uppercase text-[10px]">${item.tournament}</span>
+                            <button onclick="purgeSingleHistoryRecord(${index})" class="text-red-400 hover:bg-red-500/10 px-2 py-0.5 rounded-md"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <h4 class="font-black text-slate-200 text-sm">${item.teamA} vs ${item.teamB}</h4>
+                        <div class="flex justify-between text-slate-400 text-[11px] font-medium pt-1 border-t border-slate-800">
+                            <span>Score: <strong class="text-white">${item.score}/${item.wickets}</strong></span>
+                            <span>Overs: ${Math.floor(item.totalBalls/6)}.${item.totalBalls%6}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function purgeSingleHistoryRecord(idx) {
+            if(confirm("আপনি কি নিশ্চিতভাবে এই রেকর্ডটি চিরতরে ডিলিট করতে চান?")) {
+                let logStack = JSON.parse(localStorage.getItem('match_history_db')) || [];
+                logStack.splice(idx, 1);
+                localStorage.setItem('match_history_db', JSON.stringify(logStack));
+                renderHistoryArchivesGrid();
+                refreshHomeDashboardMetrics();
+            }
+        }
+
+        function clearAllHistoryRecords() {
+            if(confirm("সব ডাটাবেস রেকর্ড মুছে ফেলতে চান?")) {
+                localStorage.removeItem('match_history_db');
+                renderHistoryArchivesGrid();
+                refreshHomeDashboardMetrics();
+            }
+        }
+
+        function refreshHomeDashboardMetrics() {
+            let logStack = JSON.parse(localStorage.getItem('match_history_db')) || [];
+            document.getElementById('home-stat-matches').innerText = logStack.length;
+            
+            let recentWidget = document.getElementById('home-recent-matches');
+            if(logStack.length > 0) {
+                recentWidget.innerHTML = '';
+                logStack.slice(0, 2).forEach(m => {
+                    recentWidget.innerHTML += `
+                        <div class="glass-panel p-3.5 rounded-2xl flex justify-between items-center text-xs font-bold border border-slate-900 shadow-sm">
+                            <div>
+                                <span class="text-[9px] text-cricket-400 block">${m.tournament}</span>
+                                <span class="text-slate-200">${m.teamA} vs ${m.teamB}</span>
+                            </div>
+                            <span class="bg-slate-900 px-3 py-1 rounded-xl text-emerald-400">${m.score}/${m.wickets}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Window Bootstrap Resilient Hydration Lifecycle
+        window.onload = function() {
+            refreshHomeDashboardMetrics();
+            let recoveredSession = JSON.parse(localStorage.getItem('cached_live_match'));
+            if(recoveredSession) {
+                if(confirm("একটি অসমাপ্ত লাইভ ম্যাচ সেশন ব্যাকগ্রাউন্ডে সক্রিয় আছে। আপনি কি ম্যাচটি আবার পুনরুদ্ধার (Resume) করতে চান?")) {
+                    matchEngineState = recoveredSession;
+                    syncLiveScoreboardDOM();
+                    setupWagonWheelCanvasCore();
+                    switchView('view-live');
+                }
+            }
+        };
+    </script>
+</body>
+</html>
